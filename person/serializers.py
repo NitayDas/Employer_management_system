@@ -1,41 +1,51 @@
 from rest_framework import serializers
 from .models import *
 from django.contrib.auth import authenticate
-from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import get_user_model
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
 
-class UserSerializer(serializers.ModelSerializer):
+CustomUser = get_user_model()
+
+class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
-        fields = ['id', 'email']
+        model = CustomUser
+        fields = ('id', 'email', 'first_name', 'last_name')
+        read_only_fields = ('id',)
+        
+        
 
 
-
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token['email'] = user.email
+        return token
+    
 
 class SignupSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
-        fields = ['email', 'password']
+        model = CustomUser
+        fields = ('email','first_name','last_name','password')
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
-        return User.objects.create_user(**validated_data)
+        user = CustomUser.objects.create_user(
+            email=validated_data['email'],
+            first_name=validated_data['first_name'],
+            last_name=validated_data['last_name'],
+            password=validated_data['password']
+        )
+        return user
     
 
 
 
 
-class LoginSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    password = serializers.CharField(write_only=True)
+    
+    
 
-    def validate(self, data):
-        user = authenticate(email=data['email'], password=data['password'])
-        if user:
-            refresh = RefreshToken.for_user(user)
-            return {
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-            }
-        raise serializers.ValidationError("Invalid login credentials")
+    
+

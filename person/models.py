@@ -19,16 +19,21 @@ class UserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
     
 
+    
 
 
-
-class User(AbstractBaseUser, PermissionsMixin):
+class CustomUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
-    is_active = models.BooleanField(default=False)
+    first_name = models.CharField(max_length=30)
+    last_name = models.CharField(max_length=30)
+    is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-
-    USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = []
+    date_joined = models.DateTimeField(auto_now_add=True)
 
     objects = UserManager()
 
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['first_name', 'last_name']
+
+    def __str__(self):
+        return self.email
